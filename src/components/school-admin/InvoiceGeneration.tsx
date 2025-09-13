@@ -3,15 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { 
-  FileText, 
   Calendar,
   Users,
-  DollarSign,
   CheckCircle,
-  AlertCircle,
-  Search,
-  Filter,
-  GraduationCap
+  AlertCircle
 } from 'lucide-react'
 
 interface FeeItem {
@@ -89,7 +84,7 @@ const InvoiceGeneration: React.FC = () => {
   // Student selection state
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
-  const [classFilter, setClassFilter] = useState<string>('')
+  // const [classFilter] = useState<string>('')
   const [showStudentSelection, setShowStudentSelection] = useState(false)
   
   const queryClient = useQueryClient()
@@ -235,15 +230,15 @@ const InvoiceGeneration: React.FC = () => {
     }
   }
 
-  const selectedFeeItemData = feeItems?.find(item => item.id === selectedFeeItem)
+  // const selectedFeeItemData = feeItems?.find(item => item.id === selectedFeeItem)
 
   // Filter students based on search and class filter
-  const filteredStudents = students?.filter(student => {
-    const matchesSearch = (student.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (student.class_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-    const matchesClass = !classFilter || student.class_name === classFilter
-    return matchesSearch && matchesClass
-  }) || []
+  // const _filteredStudents = students?.filter(student => {
+  //   const matchesSearch = (student.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+  //                        (student.class_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  //   const matchesClass = !classFilter || student.class_name === classFilter
+  //   return matchesSearch && matchesClass
+  // }) || []
 
   // Get students for individual selection
   // If individual selection is open, show all students (filtered by search)
@@ -280,20 +275,20 @@ const InvoiceGeneration: React.FC = () => {
     }
   }
 
-  const handleSelectAllInClass = (className: string) => {
-    const classStudents = students?.filter(student => student.class_name === className) || []
-    const classStudentIds = classStudents.map(student => student.id)
-    
-    const allClassSelected = classStudentIds.every(id => selectedStudents.has(id))
-    
-    const newSelection = new Set(selectedStudents)
-    if (allClassSelected) {
-      classStudentIds.forEach(id => newSelection.delete(id))
-    } else {
-      classStudentIds.forEach(id => newSelection.add(id))
-    }
-    setSelectedStudents(newSelection)
-  }
+  // const _handleSelectAllInClass = (className: string) => {
+  //   const classStudents = students?.filter(student => student.class_name === className) || []
+  //   const classStudentIds = classStudents.map(student => student.id)
+  //   
+  //   const allClassSelected = classStudentIds.every(id => selectedStudents.has(id))
+  //   
+  //   const newSelection = new Set(selectedStudents)
+  //   if (allClassSelected) {
+  //     classStudentIds.forEach(id => newSelection.delete(id))
+  //   } else {
+  //     classStudentIds.forEach(id => newSelection.add(id))
+  //   }
+  //   setSelectedStudents(newSelection)
+  // }
 
   const clearSelection = () => {
     setSelectedStudents(new Set())

@@ -84,10 +84,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
             
             if (jsonData.length > 0) {
               const headers = jsonData[0] as string[]
-              data = jsonData.slice(1).map((row: any[], index) => {
+              data = jsonData.slice(1).map((row: unknown) => {
+                const rowArray = row as any[]
                 const obj: any = {}
                 headers.forEach((header, i) => {
-                  obj[header] = row[i] || ''
+                  obj[header] = rowArray[i] || ''
                 })
                 return obj
               })

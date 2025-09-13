@@ -5,7 +5,6 @@ import {
   Users, 
   School, 
   BarChart3, 
-  Settings, 
   LogOut,
   Plus,
   Building2

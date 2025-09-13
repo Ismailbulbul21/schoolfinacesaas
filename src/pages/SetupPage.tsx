@@ -39,7 +39,7 @@ const SetupPage: React.FC = () => {
   useEffect(() => {
     // Check if super admin already exists
     const checkSuperAdmin = async () => {
-      const { data, error } = await supabase
+      const { data, error: _error } = await supabase
         .from('super_admins')
         .select('id')
         .limit(1)

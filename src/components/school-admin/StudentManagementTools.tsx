@@ -1,20 +1,14 @@
 import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { 
   Settings, 
   Filter, 
-  Search, 
   SortAsc, 
   SortDesc,
-  Users,
-  GraduationCap,
-  Calendar,
   BarChart3,
   X,
-  CheckCircle,
-  AlertCircle
 } from 'lucide-react'
 
 interface StudentManagementToolsProps {

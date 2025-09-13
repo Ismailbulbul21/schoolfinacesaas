@@ -21,10 +21,8 @@ export const useSessionRefresh = () => {
         // Only refresh if it's been at least 30 minutes since last refresh
         if (now - lastRefreshRef.current > 30 * 60 * 1000) {
           console.log('Auto-refreshing session...')
-          const success = await refreshSessionIfNeeded()
-          if (success) {
-            lastRefreshRef.current = now
-          }
+          await refreshSessionIfNeeded()
+          lastRefreshRef.current = now
         }
         scheduleRefresh() // Schedule next refresh
       }, 45 * 60 * 1000) // 45 minutes
@@ -38,10 +36,8 @@ export const useSessionRefresh = () => {
         const now = Date.now()
         if (now - lastRefreshRef.current > 10 * 60 * 1000) { // Only if 10+ minutes since last refresh
           console.log('User returned to tab, refreshing session...')
-          const success = await refreshSessionIfNeeded()
-          if (success) {
-            lastRefreshRef.current = now
-          }
+          await refreshSessionIfNeeded()
+          lastRefreshRef.current = now
         }
       }
     }

@@ -10,11 +10,7 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
-  Filter,
   CheckCircle,
-  CreditCard,
-  Clock,
-  AlertCircle,
   Search
 } from 'lucide-react'
 
@@ -82,7 +78,7 @@ const Reports: React.FC = () => {
     enabled: !!schoolId,
   })
 
-  const { data: students, isLoading: studentsLoading } = useQuery({
+  const { data: _students, isLoading: _studentsLoading } = useQuery({
     queryKey: ['students', schoolId],
     queryFn: async () => {
       if (!schoolId) throw new Error('No school ID')

@@ -9,7 +9,6 @@ import {
   Upload, 
   FileText, 
   CheckCircle, 
-  XCircle, 
   X,
   Users,
   Download
@@ -23,7 +22,7 @@ const SimpleBulkImport: React.FC<SimpleBulkImportProps> = ({ onClose }) => {
   const { schoolId } = useAuth()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<'upload' | 'preview' | 'importing' | 'complete'>('upload')
-  const [file, setFile] = useState<File | null>(null)
+  const [, setFile] = useState<File | null>(null)
   const [students, setStudents] = useState<any[]>([])
   const [errors, setErrors] = useState<string[]>([])
   const [importResults, setImportResults] = useState<{ success: number; errors: string[] } | null>(null)

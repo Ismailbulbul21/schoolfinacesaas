@@ -66,7 +66,7 @@ export const useOptimizedUserRole = (email: string) => {
 
 // Hook for optimized students queries
 export const useOptimizedStudents = (schoolId: string) => {
-  const { userRole, schoolId: userSchoolId } = useAuth()
+  const { schoolId: userSchoolId } = useAuth()
   
   return useQuery({
     queryKey: ['students', schoolId || userSchoolId],
@@ -90,7 +90,7 @@ export const useOptimizedStudents = (schoolId: string) => {
 
 // Hook for optimized fee items queries
 export const useOptimizedFeeItems = (schoolId: string) => {
-  const { userRole, schoolId: userSchoolId } = useAuth()
+  const { schoolId: userSchoolId } = useAuth()
   
   return useQuery({
     queryKey: ['feeItems', schoolId || userSchoolId],
@@ -114,7 +114,7 @@ export const useOptimizedFeeItems = (schoolId: string) => {
 
 // Hook for optimized invoices queries
 export const useOptimizedInvoices = (schoolId: string, filters?: { status?: string, class_name?: string }) => {
-  const { userRole, schoolId: userSchoolId } = useAuth()
+  const { schoolId: userSchoolId } = useAuth()
   
   return useQuery({
     queryKey: ['invoices', schoolId || userSchoolId, filters],

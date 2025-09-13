@@ -4,10 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { 
   Download, 
-  FileText, 
   X, 
-  CheckCircle,
-  Settings,
   Users
 } from 'lucide-react'
 import * as XLSX from 'xlsx'

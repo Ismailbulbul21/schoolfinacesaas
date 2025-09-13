@@ -23,6 +23,10 @@ interface AuthContextType {
   schoolId: string | null
   userRole: string | null
   userDbId: string | null
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>
+  createSuperAdmin: (email: string, password: string, fullName: string) => Promise<{ error: any }>
+  session: any
+  refreshSessionIfNeeded: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -282,6 +286,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     schoolId,
     userRole,
     userDbId,
+    changePassword: async (_currentPassword: string, newPassword: string) => {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      return { error }
+    },
+    createSuperAdmin: async (email: string, password: string, fullName: string) => {
+      const { error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        user_metadata: { full_name: fullName }
+      })
+      if (error) return { error }
+      
+      // Add to super_admins table
+      const { error: insertError } = await supabase
+        .from('super_admins')
+        .insert([{ email, full_name: fullName }])
+      
+      return { error: insertError }
+    },
+    session: null,
+    refreshSessionIfNeeded: async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        const { error } = await supabase.auth.refreshSession()
+        if (error) console.error('Error refreshing session:', error)
+      }
+    }
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

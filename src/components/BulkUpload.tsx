@@ -139,7 +139,7 @@ const BulkUpload: React.FC<BulkUploadProps> = ({ type, onSuccess, onError }) => 
     }
   }
 
-  const handleValidationComplete = (isValid: boolean, validData: any[], errors: ValidationError[]) => {
+  const handleValidationComplete = (isValid: boolean, _validData: any[], errors: ValidationError[]) => {
     setIsValid(isValid)
     setValidationErrors(errors)
   }

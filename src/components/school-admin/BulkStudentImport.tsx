@@ -9,12 +9,9 @@ import {
   Upload,
   FileText,
   CheckCircle,
-  XCircle,
-  AlertCircle,
   Download,
   X,
-  Users,
-  GraduationCap
+  Users
 } from 'lucide-react'
 
 interface StudentData {
@@ -38,7 +35,7 @@ const BulkStudentImport: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { schoolId } = useAuth()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<'upload' | 'mapping' | 'preview' | 'importing' | 'complete'>('upload')
-  const [file, setFile] = useState<File | null>(null)
+  const [, setFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ParsedData | null>(null)
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({ name: null, class_name: null })
   const [importResults, setImportResults] = useState<{ success: number; errors: string[] } | null>(null)
@@ -224,7 +221,7 @@ const BulkStudentImport: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       // The function returns an array with [inserted_count, error_count, errors]
       const result = data?.[0]
       const successCount = result?.inserted_count || 0
-      const errorCount = result?.error_count || 0
+      // const _errorCount = result?.error_count || 0
       const errors = result?.errors || []
       
       setImportResults({ 

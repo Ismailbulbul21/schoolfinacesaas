@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import type { ColumnDefinition, ColumnTemplate, SchoolColumnConfig } from '../../types/import'
@@ -7,15 +7,10 @@ import {
   CheckCircle, 
   XCircle, 
   Info, 
-  Download,
   Settings,
   Users,
   Phone,
-  Mail,
-  Calendar,
-  MapPin,
   GraduationCap,
-  Heart,
   FileText
 } from 'lucide-react'
 
@@ -26,9 +21,8 @@ interface ColumnSelectorProps {
 
 const ColumnSelector: React.FC<ColumnSelectorProps> = ({ onColumnsSelected, onClose }) => {
   const { schoolId } = useAuth()
-  const queryClient = useQueryClient()
   const [selectedColumns, setSelectedColumns] = useState<string[]>(['full_name', 'class_name'])
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [, setSelectedTemplate] = useState<string | null>(null)
   const [step, setStep] = useState<'template' | 'customize' | 'preview'>('template')
 
   // Fetch available column templates
@@ -42,7 +36,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({ onColumnsSelected, onCl
   })
 
   // Fetch school's current column configuration
-  const { data: schoolConfig, isLoading: configLoading } = useQuery({
+  const { data: _schoolConfig, isLoading: configLoading } = useQuery({
     queryKey: ['school-column-config', schoolId],
     queryFn: async () => {
       if (!schoolId) throw new Error('No school ID')

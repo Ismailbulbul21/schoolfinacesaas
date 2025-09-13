@@ -21,7 +21,6 @@ interface School {
 import { 
   Plus, 
   Edit, 
-  Trash2, 
   Eye, 
   Building2,
   Phone,
@@ -43,7 +42,7 @@ const SchoolsList: React.FC = () => {
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null)
   const [deactivateReason, setDeactivateReason] = useState('')
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { } = useAuth()
 
   const { data: schools, isLoading, error } = useQuery({
     queryKey: ['schools-with-status'],
