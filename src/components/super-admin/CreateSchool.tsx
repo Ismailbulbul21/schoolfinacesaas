@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Building2, User, Mail, Phone, MapPin, AlertCircle, CheckCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -21,7 +20,6 @@ const createSchoolSchema = z.object({
 type CreateSchoolForm = z.infer<typeof createSchoolSchema>
 
 const CreateSchool: React.FC = () => {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -37,60 +35,77 @@ const CreateSchool: React.FC = () => {
 
   const createSchoolMutation = useMutation({
     mutationFn: async (data: CreateSchoolForm) => {
-      // Create school first
-      const { data: school, error: schoolError } = await supabase
-        .from('schools')
-        .insert({
-          name: data.name,
-          address: data.address,
-          phone: data.phone,
-        })
-        .select()
-        .single()
+      try {
+        // Create school first
+        const { data: school, error: schoolError } = await supabase
+          .from('schools')
+          .insert({
+            name: data.name,
+            address: data.address,
+            phone: data.phone,
+          })
+          .select()
+          .single()
 
-      if (schoolError) throw schoolError
+        if (schoolError) {
+          console.error('School creation error:', schoolError)
+          throw schoolError
+        }
 
-      // Create Supabase Auth user for school admin
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.adminEmail,
-        password: data.adminPassword,
-      })
-
-      if (authError) {
-        // If auth user creation fails, clean up the school record
-        await supabase.from('schools').delete().eq('id', school.id)
-        throw authError
-      }
-
-      // Create school admin record
-      const { error: adminError } = await supabase
-        .from('school_admins')
-        .insert({
-          name: data.adminName,
+        // Create Supabase Auth user for school admin using admin API
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: data.adminEmail,
-          phone: data.adminPhone,
-          school_id: school.id,
+          password: data.adminPassword,
+          email_confirm: true,
         })
 
-      if (adminError) {
-        // If admin record creation fails, clean up auth user and school
-        await supabase.auth.admin.deleteUser(authData.user?.id || '')
-        await supabase.from('schools').delete().eq('id', school.id)
-        throw adminError
-      }
+        if (authError) {
+          console.error('Auth user creation error:', authError)
+          // If auth user creation fails, clean up the school record
+          await supabase.from('schools').delete().eq('id', school.id)
+          throw authError
+        }
 
-      return school
+        // Create school admin record
+        const { error: adminError } = await supabase
+          .from('school_admins')
+          .insert({
+            name: data.adminName,
+            email: data.adminEmail,
+            phone: data.adminPhone,
+            school_id: school.id,
+          })
+
+        if (adminError) {
+          console.error('Admin record creation error:', adminError)
+          // If admin record creation fails, clean up auth user and school
+          if (authData.user?.id) {
+            await supabase.auth.admin.deleteUser(authData.user.id)
+          }
+          await supabase.from('schools').delete().eq('id', school.id)
+          throw adminError
+        }
+
+        return school
+      } catch (error) {
+        console.error('Create school mutation error:', error)
+        throw error
+      }
     },
     onSuccess: (school) => {
       queryClient.invalidateQueries({ queryKey: ['schools'] })
+      queryClient.invalidateQueries({ queryKey: ['schools-with-status'] })
       setSuccess(`School "${school.name}" and admin account created successfully!`)
       reset()
-      setTimeout(() => {
-        navigate('/super-admin/schools')
-      }, 2000)
+      // Stay in super admin dashboard, don't navigate away
     },
     onError: (error: any) => {
+      console.error('Create school error:', error)
       setError(error.message || 'Failed to create school')
+    },
+    onSettled: () => {
+      // This runs whether success or error
+      console.log('Create school mutation completed')
     },
   })
 
@@ -98,7 +113,15 @@ const CreateSchool: React.FC = () => {
     setError(null)
     setSuccess(null)
     try {
-      await createSchoolMutation.mutateAsync(data)
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 30000) // 30 second timeout
+      })
+      
+      await Promise.race([
+        createSchoolMutation.mutateAsync(data),
+        timeoutPromise
+      ])
     } catch (error) {
       console.error('Error creating school:', error)
     }
@@ -318,7 +341,10 @@ const CreateSchool: React.FC = () => {
               className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {createSchoolMutation.isPending ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating School...
+                </div>
               ) : (
                 'Create School'
               )}
