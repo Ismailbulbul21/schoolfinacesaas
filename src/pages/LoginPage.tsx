@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff, School, AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react'
-import Logo from '../components/Logo'
+import FullLogo from '../components/FullLogo'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -106,7 +106,7 @@ const LoginPage: React.FC = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <Logo size="large" showText={true} />
+              <FullLogo className="w-64 h-20" />
             </div>
             <p className="mt-2 text-gray-600 font-medium">
               School Finance Management System
