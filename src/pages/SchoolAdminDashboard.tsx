@@ -5,7 +5,6 @@ import {
   Users, 
   BarChart3, 
   LogOut,
-  Building2,
   DollarSign,
   FileText,
   Menu,
@@ -21,6 +20,7 @@ import FeeItemsList from '../components/school-admin/FeeItemsList'
 import InvoiceGeneration from '../components/school-admin/InvoiceGeneration'
 import Reports from '../components/school-admin/Reports'
 import PasswordChangeModal from '../components/school-admin/PasswordChangeModal'
+import Logo from '../components/Logo'
 
 const SchoolAdminDashboard: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -102,13 +102,7 @@ const SchoolAdminDashboard: React.FC = () => {
           {/* Enhanced Logo and header */}
           <div className="flex items-center justify-between px-6 py-6 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
             <div className="flex items-center">
-              <div className="flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg">
-                <Building2 className="w-7 h-7 text-white" />
-              </div>
-              <div className="ml-4">
-                <h1 className="text-xl font-bold text-white">EduFinance Pro</h1>
-                <p className="text-blue-100 text-sm">School Management System</p>
-              </div>
+              <Logo size="medium" showText={true} className="text-white" />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff, School, AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react'
+import Logo from '../components/Logo'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -104,14 +105,11 @@ const LoginPage: React.FC = () => {
         <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-8 border border-white/30">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-              <School className="h-8 w-8 text-white" />
+            <div className="flex justify-center mb-6">
+              <Logo size="large" showText={true} />
             </div>
-            <h1 className="mt-6 text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Finance Pro
-            </h1>
             <p className="mt-2 text-gray-600 font-medium">
-              School Management System
+              School Finance Management System
             </p>
             <p className="mt-1 text-sm text-gray-500">
               Sign in to access your dashboard

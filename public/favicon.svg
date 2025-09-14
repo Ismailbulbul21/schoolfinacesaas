@@ -1,0 +1,27 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- School Building Base -->
+  <rect x="4" y="18" width="24" height="12" fill="#2563eb" rx="2"/>
+  
+  <!-- School Roof -->
+  <path d="M2 18 L16 8 L30 18 L28 18 L16 10 L4 18 Z" fill="#1d4ed8"/>
+  
+  <!-- School Windows -->
+  <rect x="7" y="21" width="4" height="4" fill="#dbeafe" rx="1"/>
+  <rect x="13" y="21" width="4" height="4" fill="#dbeafe" rx="1"/>
+  <rect x="19" y="21" width="4" height="4" fill="#dbeafe" rx="1"/>
+  
+  <!-- School Door -->
+  <rect x="14" y="24" width="4" height="6" fill="#1e40af" rx="1"/>
+  
+  <!-- Graduation Cap -->
+  <ellipse cx="16" cy="6" rx="6" ry="2" fill="#f59e0b"/>
+  <rect x="10" y="6" width="12" height="1" fill="#d97706"/>
+  <circle cx="16" cy="6" r="1" fill="#ffffff"/>
+  
+  <!-- Books -->
+  <rect x="6" y="12" width="3" height="4" fill="#10b981" rx="0.5"/>
+  <rect x="10" y="11" width="3" height="4" fill="#3b82f6" rx="0.5"/>
+  <rect x="14" y="10" width="3" height="4" fill="#8b5cf6" rx="0.5"/>
+  <rect x="18" y="11" width="3" height="4" fill="#f59e0b" rx="0.5"/>
+  <rect x="22" y="12" width="3" height="4" fill="#ef4444" rx="0.5"/>
+</svg>
