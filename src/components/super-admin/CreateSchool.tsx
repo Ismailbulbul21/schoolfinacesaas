@@ -37,69 +37,96 @@ const CreateSchool: React.FC = () => {
 
   const createSchoolMutation = useMutation({
     mutationFn: async (data: CreateSchoolForm) => {
-      // Create school first
-      const { data: school, error: schoolError } = await supabase
-        .from('schools')
-        .insert({
-          name: data.name,
-          address: data.address,
-          phone: data.phone,
-        })
-        .select()
-        .single()
+      console.log('Starting school creation process...', data)
 
-      if (schoolError) throw schoolError
+      try {
+        // Create school first
+        const { data: school, error: schoolError } = await supabase
+          .from('schools')
+          .insert({
+            name: data.name,
+            address: data.address,
+            phone: data.phone,
+          })
+          .select()
+          .single()
 
-      // Create Supabase Auth user for school admin
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.adminEmail,
-        password: data.adminPassword,
-      })
+        if (schoolError) {
+          console.error('School creation error:', schoolError)
+          throw schoolError
+        }
 
-      if (authError) {
-        // If auth user creation fails, clean up the school record
-        await supabase.from('schools').delete().eq('id', school.id)
-        throw authError
-      }
+        console.log('School created successfully:', school)
 
-      // Create school admin record
-      const { error: adminError } = await supabase
-        .from('school_admins')
-        .insert({
-          name: data.adminName,
+        // Create school admin auth user first
+        console.log('Creating school admin auth user...')
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email: data.adminEmail,
-          phone: data.adminPhone,
-          school_id: school.id,
+          password: data.adminPassword,
         })
 
-      if (adminError) {
-        // If admin record creation fails, clean up auth user and school
-        await supabase.auth.admin.deleteUser(authData.user?.id || '')
-        await supabase.from('schools').delete().eq('id', school.id)
-        throw adminError
-      }
+        if (authError) {
+          console.error('Auth user creation error:', authError)
+          // If auth user creation fails, clean up the school record
+          await supabase.from('schools').delete().eq('id', school.id)
+          throw authError
+        }
 
-      return school
+        if (!authData.user) {
+          console.error('No user returned from auth signup')
+          // If no user returned, clean up the school record
+          await supabase.from('schools').delete().eq('id', school.id)
+          throw new Error('Failed to create auth user')
+        }
+
+        console.log('Auth user created successfully:', authData.user.id)
+
+        // Create school admin record with user_id
+        console.log('Creating school admin record...')
+        const { error: adminError } = await supabase
+          .from('school_admins')
+          .insert({
+            id: authData.user.id, // Use the auth user ID as the primary key
+            name: data.adminName,
+            email: data.adminEmail,
+            phone: data.adminPhone,
+            school_id: school.id,
+          })
+
+        if (adminError) {
+          console.error('Admin record creation error:', adminError)
+          // If admin record creation fails, clean up the school record
+          await supabase.from('schools').delete().eq('id', school.id)
+          throw adminError
+        }
+
+        console.log('Admin record created successfully')
+
+        return school
+      } catch (error) {
+        console.error('Error in school creation:', error)
+        throw error
+      }
     },
     onSuccess: (school) => {
+      console.log('School creation completed successfully:', school)
       queryClient.invalidateQueries({ queryKey: ['schools'] })
-      setSuccess(`School "${school.name}" and admin account created successfully!`)
+      setSuccess(`School "${school.name}" and admin account created successfully! The admin can now log in with their credentials.`)
       reset()
-      // Don't navigate away - let super admin stay in dashboard
+      setTimeout(() => {
+        navigate('/super-admin/schools')
+      }, 3000)
     },
     onError: (error: any) => {
       setError(error.message || 'Failed to create school')
     },
   })
 
-  const onSubmit = async (data: CreateSchoolForm) => {
+  const onSubmit = (data: CreateSchoolForm) => {
+    console.log('Form submitted with data:', data)
     setError(null)
     setSuccess(null)
-    try {
-      await createSchoolMutation.mutateAsync(data)
-    } catch (error) {
-      console.error('Error creating school:', error)
-    }
+    createSchoolMutation.mutate(data)
   }
 
   return (

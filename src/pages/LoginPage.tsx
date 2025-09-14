@@ -1,11 +1,10 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff, School, AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react'
-import FullLogo from '../components/FullLogo'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -18,7 +17,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const { signIn, clearSession, forceRoleRefresh } = useAuth()
+  const { signIn } = useAuth()
   const navigate = useNavigate()
 
   const {
@@ -105,11 +104,14 @@ const LoginPage: React.FC = () => {
         <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-3xl p-8 border border-white/30">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <FullLogo className="w-64 h-20" />
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+              <School className="h-8 w-8 text-white" />
             </div>
+            <h1 className="mt-6 text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Finance Pro
+            </h1>
             <p className="mt-2 text-gray-600 font-medium">
-              School Finance Management System
+              School Management System
             </p>
             <p className="mt-1 text-sm text-gray-500">
               Sign in to access your dashboard
@@ -214,34 +216,11 @@ const LoginPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Debug Buttons - Remove after fixing */}
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800 mb-2">Debug Tools (Temporary):</p>
-            <div className="space-x-2">
-              <button
-                type="button"
-                onClick={() => {
-                  clearSession()
-                  window.location.reload()
-                }}
-                className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
-              >
-                Clear Session & Reload
-              </button>
-              <button
-                type="button"
-                onClick={forceRoleRefresh}
-                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Force Role Refresh
-              </button>
-            </div>
-          </div>
-
         </div>
 
+
         {/* Bottom Text */}
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <p className="text-xs text-white/70 font-medium">
             Secure school finance management system
           </p>

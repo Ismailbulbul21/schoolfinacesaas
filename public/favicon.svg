@@ -1,44 +1,24 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background Circle -->
-  <circle cx="16" cy="16" r="16" fill="url(#gradient1)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- School building -->
+  <rect x="6" y="16" width="20" height="14" fill="#2563eb"/>
   
-  <!-- School Building -->
-  <rect x="6" y="18" width="20" height="10" fill="#ffffff" rx="1"/>
+  <!-- School roof -->
+  <polygon points="4,16 16,4 28,16" fill="#dc2626"/>
   
-  <!-- School Roof -->
-  <path d="M4 18 L16 8 L28 18 L26 18 L16 12 L6 18 Z" fill="#ffffff"/>
+  <!-- Door -->
+  <rect x="14" y="22" width="4" height="8" fill="#1e40af"/>
   
-  <!-- School Windows -->
-  <rect x="9" y="21" width="3" height="3" fill="#2563eb" rx="0.5"/>
-  <rect x="14" y="21" width="3" height="3" fill="#2563eb" rx="0.5"/>
-  <rect x="19" y="21" width="3" height="3" fill="#2563eb" rx="0.5"/>
+  <!-- Windows -->
+  <rect x="9" y="18" width="3" height="3" fill="#fbbf24"/>
+  <rect x="20" y="18" width="3" height="3" fill="#fbbf24"/>
   
-  <!-- School Door -->
-  <rect x="14" y="24" width="4" height="4" fill="#1d4ed8" rx="0.5"/>
+  <!-- Bell tower -->
+  <rect x="15" y="10" width="2" height="6" fill="#7c3aed"/>
+  <circle cx="16" cy="8" r="1" fill="#fbbf24"/>
   
-  <!-- Graduation Cap -->
-  <ellipse cx="16" cy="6" rx="4" ry="1.5" fill="#f59e0b"/>
-  <rect x="12" y="6" width="8" height="0.8" fill="#d97706"/>
-  <circle cx="16" cy="6" r="0.8" fill="#ffffff"/>
+  <!-- Ground -->
+  <rect x="0" y="30" width="32" height="2" fill="#16a34a"/>
   
-  <!-- Books Stack -->
-  <rect x="8" y="14" width="2" height="3" fill="#10b981" rx="0.3"/>
-  <rect x="10.5" y="13" width="2" height="3" fill="#3b82f6" rx="0.3"/>
-  <rect x="13" y="12" width="2" height="3" fill="#8b5cf6" rx="0.3"/>
-  <rect x="15.5" y="13" width="2" height="3" fill="#f59e0b" rx="0.3"/>
-  <rect x="18" y="14" width="2" height="3" fill="#ef4444" rx="0.3"/>
-  
-  <!-- Decorative Elements -->
-  <circle cx="24" cy="10" r="1" fill="#ffffff" opacity="0.8"/>
-  <circle cx="26" cy="12" r="0.8" fill="#ffffff" opacity="0.6"/>
-  <circle cx="8" cy="10" r="0.8" fill="#ffffff" opacity="0.6"/>
-  
-  <!-- Gradient Definition -->
-  <defs>
-    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#1d4ed8;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+  <!-- School initials -->
+  <text x="16" y="6" font-family="Arial, sans-serif" font-size="2.5" font-weight="bold" text-anchor="middle" fill="#ffffff">SS</text>
 </svg>

@@ -20,7 +20,7 @@ import FeeItemsList from '../components/school-admin/FeeItemsList'
 import InvoiceGeneration from '../components/school-admin/InvoiceGeneration'
 import Reports from '../components/school-admin/Reports'
 import PasswordChangeModal from '../components/school-admin/PasswordChangeModal'
-import Logo from '../components/Logo'
+import FullLogo from '../components/FullLogo'
 
 const SchoolAdminDashboard: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -102,7 +102,7 @@ const SchoolAdminDashboard: React.FC = () => {
           {/* Enhanced Logo and header */}
           <div className="flex items-center justify-between px-6 py-6 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800">
             <div className="flex items-center">
-              <Logo size="medium" showText={true} className="text-white" />
+              <FullLogo size="medium" showText={true} className="text-white" />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}

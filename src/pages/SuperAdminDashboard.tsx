@@ -2,20 +2,19 @@ import React from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { 
-  Users, 
   School, 
   BarChart3, 
   LogOut,
   Plus,
-  Building2
+  Building2,
+  Settings
 } from 'lucide-react'
 
-// Import dashboard components (to be created)
+// Import dashboard components
 import SchoolsList from '../components/super-admin/SchoolsList'
 import CreateSchool from '../components/super-admin/CreateSchool'
 import SystemStats from '../components/super-admin/SystemStats'
-import FileUploadTest from '../components/super-admin/FileUploadTest'
-import Logo from '../components/Logo'
+import SystemSettings from '../components/super-admin/SystemSettings'
 
 const SuperAdminDashboard: React.FC = () => {
   const { user, signOut } = useAuth()
@@ -25,7 +24,7 @@ const SuperAdminDashboard: React.FC = () => {
     { name: 'Dashboard', href: '/super-admin', icon: BarChart3 },
     { name: 'Schools', href: '/super-admin/schools', icon: School },
     { name: 'Create School', href: '/super-admin/create-school', icon: Plus },
-    { name: 'File Upload', href: '/super-admin/file-upload', icon: Users },
+    { name: 'System Settings', href: '/super-admin/settings', icon: Settings },
   ]
 
   const handleSignOut = async () => {
@@ -39,7 +38,12 @@ const SuperAdminDashboard: React.FC = () => {
         <div className="flex-1 flex flex-col min-h-0 bg-white/80 backdrop-blur-sm border-r border-slate-200 shadow-xl">
           <div className="flex-1 flex flex-col pt-4 pb-3 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-3 mb-6">
-              <Logo size="small" showText={true} />
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <span className="ml-3 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Finance Pro
+              </span>
             </div>
             <nav className="flex-1 px-2 space-y-1">
               {navigation.map((item) => {
@@ -111,7 +115,7 @@ const SuperAdminDashboard: React.FC = () => {
                   <Route path="/" element={<SystemStats />} />
                   <Route path="/schools" element={<SchoolsList />} />
                   <Route path="/create-school" element={<CreateSchool />} />
-                  <Route path="/file-upload" element={<FileUploadTest />} />
+                  <Route path="/settings" element={<SystemSettings />} />
                 </Routes>
               </div>
             </div>

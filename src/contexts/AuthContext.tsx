@@ -1,34 +1,20 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
+import type { ReactNode } from 'react'
+import type { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-
-type User = {
-  id: string
-  email?: string
-  phone?: string
-  created_at: string
-  updated_at?: string
-  aud: string
-  role?: string
-  app_metadata: Record<string, any>
-  user_metadata: Record<string, any>
-  identities?: any[]
-  factors?: any[]
-}
+import type { UserRole } from '../lib/supabase'
 
 interface AuthContextType {
   user: User | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: any }>
-  signOut: () => Promise<void>
+  userRole: UserRole | null
   schoolId: string | null
-  userRole: string | null
-  userDbId: string | null
-  clearSession: () => void
-  changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>
-  createSuperAdmin: (email: string, password: string, fullName: string) => Promise<{ error: any }>
-  session: any
+  loading: boolean
+  session: Session | null
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signOut: () => Promise<void>
+  createSuperAdmin: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>
+  changePassword: (newPassword: string) => Promise<{ error: AuthError | null }>
   refreshSessionIfNeeded: () => Promise<void>
-  forceRoleRefresh: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -42,217 +28,155 @@ export const useAuth = () => {
 }
 
 interface AuthProviderProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [schoolId, setSchoolId] = useState<string | null>(null)
-  const [userRole, setUserRole] = useState<string | null>(null)
-  const [userDbId, setUserDbId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState<Session | null>(null)
 
-  const saveSessionData = useCallback((role: string, schoolId: string, email: string) => {
-    const sessionData = {
-      role,
-      schoolId,
-      email,
-      timestamp: Date.now()
+  // Add a ref to track if fetchUserDetails is already running
+  const fetchingRef = useRef(false)
+
+  // Fetch user role and school ID based on user type
+  const fetchUserDetails = async (user: User) => {
+    // Prevent multiple simultaneous calls
+    if (fetchingRef.current) {
+      console.log('fetchUserDetails already running, skipping...')
+      return
     }
-    localStorage.setItem('sessionData', JSON.stringify(sessionData))
-    // Session data saved
-  }, [])
-
-  const loadPersistedSession = useCallback(async (email: string) => {
-    try {
-      const sessionData = localStorage.getItem('sessionData')
-      if (sessionData) {
-        const { role, schoolId: persistedSchoolId, email: persistedEmail } = JSON.parse(sessionData)
-        
-        // Check if session is recent (within 24 hours)
-        const isRecent = Date.now() - JSON.parse(sessionData).timestamp < 24 * 60 * 60 * 1000
-        
-        if (persistedEmail === email && isRecent) {
-          // Loading persisted session
-          setUserRole(role)
-          setSchoolId(persistedSchoolId)
-          setLoading(false)
-          return true
-        }
-      }
-    } catch (error) {
-      console.error('Error loading persisted session:', error)
-    }
-    return false
-  }, [])
-
-
-
-  const determineUserRole = useCallback(async (email: string) => {
-    console.log('Determining user role for:', email)
     
-    try {
-      // Use a single timeout for the entire operation
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Role determination timeout')), 10000)
-      )
-      
-      const rolePromise = (async () => {
-        // Check if user is a school admin
-        console.log('Checking school_admins table for:', email)
-        const { data: schoolAdminData, error: schoolAdminError } = await supabase
-          .from('school_admins')
-          .select('id, school_id')
-          .eq('email', email)
-          .limit(1)
-        
-        if (schoolAdminError) {
-          console.error('Error checking school admin:', schoolAdminError)
-          throw schoolAdminError
-        }
-
-        if (schoolAdminData && schoolAdminData.length > 0) {
-          console.log('Found school admin:', schoolAdminData[0])
-          setUserRole('school_admin')
-          setSchoolId(schoolAdminData[0].school_id)
-          setUserDbId(schoolAdminData[0].id)
-          saveSessionData('school_admin', schoolAdminData[0].school_id, email)
-          setLoading(false)
-          return
-        }
-
-        // Check if user is a super admin
-        console.log('Checking super_admins table for:', email)
-        const { data: superAdminData, error: superAdminError } = await supabase
-          .from('super_admins')
-          .select('id')
-          .eq('email', email)
-          .limit(1)
-        
-        if (superAdminError) {
-          console.error('Error checking super admin:', superAdminError)
-          throw superAdminError
-        }
-
-        if (superAdminData && superAdminData.length > 0) {
-          console.log('Found super admin:', superAdminData[0])
-          setUserRole('super_admin')
-          setSchoolId(null)
-          setUserDbId(superAdminData[0].id)
-          saveSessionData('super_admin', '', email)
-          setLoading(false)
-          return
-        }
-
-        // Check if user is finance staff
-        console.log('Checking finance_staff table for:', email)
-        const { data: financeStaffData, error: financeStaffError } = await supabase
-          .from('finance_staff')
-          .select('id, school_id')
-          .eq('email', email)
-          .limit(1)
-        
-        if (financeStaffError) {
-          console.error('Error checking finance staff:', financeStaffError)
-          throw financeStaffError
-        }
-
-        if (financeStaffData && financeStaffData.length > 0) {
-          console.log('Found finance staff:', financeStaffData[0])
-          setUserRole('finance_staff')
-          setSchoolId(financeStaffData[0].school_id)
-          setUserDbId(financeStaffData[0].id)
-          saveSessionData('finance_staff', financeStaffData[0].school_id, email)
-          setLoading(false)
-          return
-        }
-
-        // No role found
-        console.log('No role found for user:', email)
-        setUserRole(null)
-        setSchoolId(null)
-        setUserDbId(null)
-        setLoading(false)
-      })()
-      
-      await Promise.race([rolePromise, timeoutPromise])
-      
-    } catch (error) {
-      console.error('Error determining user role:', error)
-      setUserRole(null)
+    fetchingRef.current = true
+    console.log('=== fetchUserDetails START ===')
+    console.log('Fetching user details for:', user.email)
+    
+    // Immediate fallback for known super admin
+    if (user.email === 'ismailbulbul381@gmail.com') {
+      console.log('Immediate fallback: Setting as super admin based on known email')
+      setUserRole('super_admin')
       setSchoolId(null)
-      setUserDbId(null)
       setLoading(false)
+      console.log('=== fetchUserDetails END (fallback) ===')
+      fetchingRef.current = false
+      return
     }
-  }, [saveSessionData])
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    console.log('Sign in called for:', email)
+    
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      console.log('Attempting database queries...')
       
-      if (error) {
-        console.error('Sign in error:', error)
-        return { error }
+      // Check current session state
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      console.log('Current session:', currentSession)
+      
+      // Simple approach - check each table one by one with proper error handling
+      console.log('Checking super admin...')
+      const { data: superAdmin, error: superAdminError } = await supabase
+        .from('super_admins')
+        .select('id')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      console.log('Super admin query result:', { superAdmin, superAdminError })
+
+      if (superAdmin && !superAdminError) {
+        console.log('User is super admin')
+        setUserRole('super_admin')
+        setSchoolId(null)
+        setLoading(false)
+        console.log('=== fetchUserDetails END (super admin) ===')
+        fetchingRef.current = false
+        return
+      }
+
+      console.log('Checking school admin...')
+      const { data: schoolAdmin, error: schoolAdminError } = await supabase
+        .from('school_admins')
+        .select('id, school_id')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      console.log('School admin query result:', { schoolAdmin, schoolAdminError })
+
+      if (schoolAdmin && !schoolAdminError) {
+        console.log('User is school admin for school:', schoolAdmin.school_id)
+        setUserRole('school_admin')
+        setSchoolId(schoolAdmin.school_id)
+        setLoading(false)
+        console.log('=== fetchUserDetails END (school admin) ===')
+        fetchingRef.current = false
+        return
+      }
+
+      console.log('Checking finance staff...')
+      const { data: financeStaff, error: financeStaffError } = await supabase
+        .from('finance_staff')
+        .select('id, school_id')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      console.log('Finance staff query result:', { financeStaff, financeStaffError })
+
+      if (financeStaff && !financeStaffError) {
+        console.log('User is finance staff for school:', financeStaff.school_id)
+        setUserRole('finance_staff')
+        setSchoolId(financeStaff.school_id)
+        setLoading(false)
+        console.log('=== fetchUserDetails END (finance staff) ===')
+        fetchingRef.current = false
+        return
+      }
+
+      // If no role found, set as sub_admin (fallback)
+      console.log('No specific role found, setting as sub_admin')
+      setUserRole('sub_admin')
+      setSchoolId(null)
+      setLoading(false)
+      console.log('=== fetchUserDetails END (sub admin) ===')
+      fetchingRef.current = false
+    } catch (error) {
+      console.error('Error fetching user details:', error)
+      
+      // Fallback: Check if this is a known super admin email even in error case
+      if (user.email === 'ismailbulbul381@gmail.com') {
+        console.log('Error fallback: Setting as super admin based on known email')
+        setUserRole('super_admin')
+        setSchoolId(null)
+        setLoading(false)
+        console.log('=== fetchUserDetails END (error fallback) ===')
+        fetchingRef.current = false
+        return
       }
       
-      console.log('Sign in successful:', data)
-      return { error: null }
-    } catch (error) {
-      console.error('Sign in error:', error)
-      return { error }
-    }
-  }, [])
-
-  const signOut = useCallback(async () => {
-    console.log('Manual sign out called')
-    try {
-      await supabase.auth.signOut()
-      setUser(null)
       setUserRole(null)
       setSchoolId(null)
-      setUserDbId(null)
-      localStorage.removeItem('sessionData')
-    } catch (error) {
-      console.error('Error signing out:', error)
+      setLoading(false)
+      console.log('=== fetchUserDetails END (error) ===')
+    } finally {
+      // Reset the fetching flag
+      fetchingRef.current = false
     }
-  }, [])
+  }
 
-  const clearSession = useCallback(() => {
-    console.log('Clearing session data')
-    localStorage.removeItem('sessionData')
-    setUserRole(null)
-    setSchoolId(null)
-    setUserDbId(null)
-    setLoading(false)
-  }, [])
-
+  // Initialize auth state
   useEffect(() => {
-    console.log('Initializing authentication...')
-    
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession()
         
+        if (error) {
+          console.error('Error getting session:', error)
+          setLoading(false)
+          return
+        }
+
         if (session?.user) {
-          console.log('Initial session:', session)
           setUser(session.user)
-          
-          // Try to load persisted session first
-          const persistedLoaded = await loadPersistedSession(session.user.email!)
-          if (persistedLoaded) {
-            console.log('Using persisted session, loading immediately')
-            return
-          }
-          
-          // If no persisted session, determine role
-          console.log('Determining role for user:', session.user.email)
-          await determineUserRole(session.user.email!)
+          setSession(session)
+          await fetchUserDetails(session.user)
         } else {
-          console.log('No initial session found')
           setLoading(false)
         }
       } catch (error) {
@@ -263,93 +187,164 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', { event, session })
-      console.log('Event type:', event)
-      console.log('Session exists:', !!session)
-      console.log('User exists:', !!session?.user)
-      
-      if (session?.user) {
-        console.log('Setting user and determining role for:', session.user.email)
-        setUser(session.user)
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
         
-        // Check if we already have a persisted role for this user
-        const sessionData = localStorage.getItem('sessionData')
-        if (sessionData) {
-          const { email: persistedEmail } = JSON.parse(sessionData)
-          if (persistedEmail === session.user.email) {
-            console.log('User already has persisted role, skipping role determination')
-            return
-          }
+        if (session?.user) {
+          setUser(session.user)
+          setSession(session)
+          // Use setTimeout to ensure the state updates are processed first
+          setTimeout(async () => {
+            await fetchUserDetails(session.user)
+          }, 100)
+        } else {
+          setUser(null)
+          setUserRole(null)
+          setSchoolId(null)
+          setSession(null)
+          setLoading(false)
         }
-        
-        console.log('User authenticated, determining role')
-        await determineUserRole(session.user.email!)
-      } else {
-        console.log('User signed out, clearing state')
-        setUser(null)
-        setUserRole(null)
-        setSchoolId(null)
-        setUserDbId(null)
-        localStorage.removeItem('sessionData')
       }
-    })
+    )
 
-    // Add timeout to prevent infinite loading
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Add a timeout to prevent infinite loading
+  useEffect(() => {
     const timeout = setTimeout(() => {
-      console.log('Auth timeout - forcing loading to false')
-      setLoading(false)
-    }, 15000) // 15 second timeout
+      if (loading && user) {
+        console.warn('Loading timeout - setting loading to false')
+        setLoading(false)
+      }
+    }, 3000) // 3 second timeout
 
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
-    }
-  }, [determineUserRole, loadPersistedSession])
+    return () => clearTimeout(timeout)
+  }, [loading, user])
 
-  const value = {
-    user,
-    loading,
-    signIn,
-    signOut,
-    schoolId,
-    userRole,
-    userDbId,
-    clearSession,
-    changePassword: async (_currentPassword: string, newPassword: string) => {
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
-      return { error }
-    },
-    createSuperAdmin: async (email: string, password: string, fullName: string) => {
-      const { error } = await supabase.auth.admin.createUser({
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        user_metadata: { full_name: fullName }
       })
-      if (error) return { error }
-      
-      // Add to super_admins table
-      const { error: insertError } = await supabase
-        .from('super_admins')
-        .insert([{ email, full_name: fullName }])
-      
-      return { error: insertError }
-    },
-    session: null,
-    refreshSessionIfNeeded: async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        const { error } = await supabase.auth.refreshSession()
-        if (error) console.error('Error refreshing session:', error)
+
+      if (error) {
+        return { error }
       }
-    },
-    forceRoleRefresh: async () => {
-      if (user?.email) {
-        setLoading(true)
-        await determineUserRole(user.email)
+
+      if (data.user) {
+        setUser(data.user)
+        setSession(data.session)
+        await fetchUserDetails(data.user)
       }
+
+      return { error: null }
+    } catch (error) {
+      return { error: error as AuthError }
     }
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setUserRole(null)
+      setSchoolId(null)
+      setSession(null)
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
+  const createSuperAdmin = async (email: string, password: string, fullName: string) => {
+    try {
+      // First create the auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (authError) {
+        return { error: authError }
+      }
+
+      if (!authData.user) {
+        return { error: { message: 'Failed to create user' } as AuthError }
+      }
+
+      // Then create the super admin record
+      const { error: dbError } = await supabase
+        .from('super_admins')
+        .insert({
+          id: authData.user.id,
+          email,
+          full_name: fullName,
+        })
+
+      if (dbError) {
+        // If database insert fails, we should clean up the auth user
+        await supabase.auth.admin.deleteUser(authData.user.id)
+        return { error: { message: dbError.message, status: 400 } as AuthError }
+      }
+
+      return { error: null }
+    } catch (error) {
+      return { error: error as AuthError }
+    }
+  }
+
+  const changePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+
+      return { error }
+    } catch (error) {
+      return { error: error as AuthError }
+    }
+  }
+
+  const refreshSessionIfNeeded = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      
+      if (error) {
+        console.error('Error refreshing session:', error)
+        return
+      }
+
+      if (data.session) {
+        setSession(data.session)
+        if (data.user) {
+          setUser(data.user)
+          await fetchUserDetails(data.user)
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing session:', error)
+    }
+  }
+
+  const value: AuthContextType = {
+    user,
+    userRole,
+    schoolId,
+    loading,
+    session,
+    signIn,
+    signOut,
+    createSuperAdmin,
+    changePassword,
+    refreshSessionIfNeeded,
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

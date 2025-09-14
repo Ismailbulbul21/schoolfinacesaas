@@ -2,12 +2,28 @@ import React from 'react'
 
 interface FullLogoProps {
   className?: string
+  size?: 'small' | 'medium' | 'large'
+  showText?: boolean
 }
 
-const FullLogo: React.FC<FullLogoProps> = ({ className = '' }) => {
+const FullLogo: React.FC<FullLogoProps> = ({ 
+  className = '', 
+  size = 'medium', 
+  showText = true 
+}) => {
+  const sizeClasses = {
+    small: 'w-32 h-8',
+    medium: 'w-48 h-12',
+    large: 'w-64 h-16'
+  }
   return (
     <div className={`flex items-center ${className}`}>
-      <svg width="240" height="80" viewBox="0 0 240 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg 
+        className={sizeClasses[size]}
+        viewBox="0 0 240 80" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+      >
         {/* Background */}
         <rect width="240" height="80" fill="url(#bgGradient)" rx="12"/>
         
@@ -39,17 +55,21 @@ const FullLogo: React.FC<FullLogoProps> = ({ className = '' }) => {
         <rect x="55" y="25" width="4" height="6" fill="#84cc16" rx="1"/>
         
         {/* School System Text */}
-        <text x="110" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">
-          School
-        </text>
-        <text x="110" y="55" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#fbbf24">
-          System
-        </text>
-        
-        {/* Subtitle */}
-        <text x="110" y="68" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#dbeafe" opacity="0.9">
-          Finance Management
-        </text>
+        {showText && (
+          <>
+            <text x="110" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">
+              School
+            </text>
+            <text x="110" y="55" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#fbbf24">
+              System
+            </text>
+            
+            {/* Subtitle */}
+            <text x="110" y="68" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#dbeafe" opacity="0.9">
+              Finance Management
+            </text>
+          </>
+        )}
         
         {/* Decorative Elements */}
         <circle cx="200" cy="20" r="3" fill="#fbbf24" opacity="0.8"/>
