@@ -23,10 +23,12 @@ interface AuthContextType {
   schoolId: string | null
   userRole: string | null
   userDbId: string | null
+  clearSession: () => void
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>
   createSuperAdmin: (email: string, password: string, fullName: string) => Promise<{ error: any }>
   session: any
   refreshSessionIfNeeded: () => Promise<void>
+  forceRoleRefresh: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -93,11 +95,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Check if user is a school admin
       // Checking school_admins table
+      console.log('Checking school_admins table for:', email)
       const { data: schoolAdminData, error: schoolAdminError } = await supabase
         .from('school_admins')
         .select('id, school_id')
         .eq('email', email)
         .limit(1)
+      
+      console.log('School admin query result:', { schoolAdminData, schoolAdminError })
       
       if (schoolAdminError) {
         console.error('Error checking school admin:', schoolAdminError)
@@ -117,11 +122,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Check if user is a super admin
       // Checking super_admins table
+      console.log('Checking super_admins table for:', email)
       const { data: superAdminData, error: superAdminError } = await supabase
         .from('super_admins')
         .select('id')
         .eq('email', email)
         .limit(1)
+      
+      console.log('Super admin query result:', { superAdminData, superAdminError })
       
       if (superAdminError) {
         console.error('Error checking super admin:', superAdminError)
@@ -214,6 +222,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [])
 
+  const clearSession = useCallback(() => {
+    console.log('Clearing session data')
+    localStorage.removeItem('sessionData')
+    setUserRole(null)
+    setSchoolId(null)
+    setUserDbId(null)
+    setLoading(false)
+  }, [])
+
   useEffect(() => {
     console.log('Initializing authentication...')
     
@@ -299,6 +316,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     schoolId,
     userRole,
     userDbId,
+    clearSession,
     changePassword: async (_currentPassword: string, newPassword: string) => {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       return { error }
@@ -324,6 +342,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (session) {
         const { error } = await supabase.auth.refreshSession()
         if (error) console.error('Error refreshing session:', error)
+      }
+    },
+    forceRoleRefresh: async () => {
+      if (user?.email) {
+        setLoading(true)
+        await determineUserRole(user.email)
       }
     }
   }

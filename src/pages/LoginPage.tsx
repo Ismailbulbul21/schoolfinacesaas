@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const { signIn, clearSession, forceRoleRefresh } = useAuth()
   const navigate = useNavigate()
 
   const {
@@ -213,6 +213,30 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
           </form>
+
+          {/* Debug Buttons - Remove after fixing */}
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 mb-2">Debug Tools (Temporary):</p>
+            <div className="space-x-2">
+              <button
+                type="button"
+                onClick={() => {
+                  clearSession()
+                  window.location.reload()
+                }}
+                className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+              >
+                Clear Session & Reload
+              </button>
+              <button
+                type="button"
+                onClick={forceRoleRefresh}
+                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Force Role Refresh
+              </button>
+            </div>
+          </div>
 
         </div>
 
