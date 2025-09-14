@@ -89,94 +89,93 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 
   const determineUserRole = useCallback(async (email: string) => {
-      // Determining user role
-      console.log('Determining user role for:', email)
+    console.log('Determining user role for:', email)
     
     try {
-      // Check if user is a school admin
-      // Checking school_admins table
-      console.log('Checking school_admins table for:', email)
-      const { data: schoolAdminData, error: schoolAdminError } = await supabase
-        .from('school_admins')
-        .select('id, school_id')
-        .eq('email', email)
-        .limit(1)
+      // Use a single timeout for the entire operation
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Role determination timeout')), 10000)
+      )
       
-      console.log('School admin query result:', { schoolAdminData, schoolAdminError })
-      
-      if (schoolAdminError) {
-        console.error('Error checking school admin:', schoolAdminError)
-        throw schoolAdminError
-      }
+      const rolePromise = (async () => {
+        // Check if user is a school admin
+        console.log('Checking school_admins table for:', email)
+        const { data: schoolAdminData, error: schoolAdminError } = await supabase
+          .from('school_admins')
+          .select('id, school_id')
+          .eq('email', email)
+          .limit(1)
+        
+        if (schoolAdminError) {
+          console.error('Error checking school admin:', schoolAdminError)
+          throw schoolAdminError
+        }
 
-      if (schoolAdminData && schoolAdminData.length > 0) {
-        // Found school admin
-        console.log('Found school admin:', schoolAdminData[0])
-        setUserRole('school_admin')
-        setSchoolId(schoolAdminData[0].school_id)
-        setUserDbId(schoolAdminData[0].id)
-        saveSessionData('school_admin', schoolAdminData[0].school_id, email)
-        setLoading(false)
-        return
-      }
+        if (schoolAdminData && schoolAdminData.length > 0) {
+          console.log('Found school admin:', schoolAdminData[0])
+          setUserRole('school_admin')
+          setSchoolId(schoolAdminData[0].school_id)
+          setUserDbId(schoolAdminData[0].id)
+          saveSessionData('school_admin', schoolAdminData[0].school_id, email)
+          setLoading(false)
+          return
+        }
 
-      // Check if user is a super admin
-      // Checking super_admins table
-      console.log('Checking super_admins table for:', email)
-      const { data: superAdminData, error: superAdminError } = await supabase
-        .from('super_admins')
-        .select('id')
-        .eq('email', email)
-        .limit(1)
-      
-      console.log('Super admin query result:', { superAdminData, superAdminError })
-      
-      if (superAdminError) {
-        console.error('Error checking super admin:', superAdminError)
-        throw superAdminError
-      }
+        // Check if user is a super admin
+        console.log('Checking super_admins table for:', email)
+        const { data: superAdminData, error: superAdminError } = await supabase
+          .from('super_admins')
+          .select('id')
+          .eq('email', email)
+          .limit(1)
+        
+        if (superAdminError) {
+          console.error('Error checking super admin:', superAdminError)
+          throw superAdminError
+        }
 
-      if (superAdminData && superAdminData.length > 0) {
-        // Found super admin
-        console.log('Found super admin:', superAdminData[0])
-        setUserRole('super_admin')
+        if (superAdminData && superAdminData.length > 0) {
+          console.log('Found super admin:', superAdminData[0])
+          setUserRole('super_admin')
+          setSchoolId(null)
+          setUserDbId(superAdminData[0].id)
+          saveSessionData('super_admin', '', email)
+          setLoading(false)
+          return
+        }
+
+        // Check if user is finance staff
+        console.log('Checking finance_staff table for:', email)
+        const { data: financeStaffData, error: financeStaffError } = await supabase
+          .from('finance_staff')
+          .select('id, school_id')
+          .eq('email', email)
+          .limit(1)
+        
+        if (financeStaffError) {
+          console.error('Error checking finance staff:', financeStaffError)
+          throw financeStaffError
+        }
+
+        if (financeStaffData && financeStaffData.length > 0) {
+          console.log('Found finance staff:', financeStaffData[0])
+          setUserRole('finance_staff')
+          setSchoolId(financeStaffData[0].school_id)
+          setUserDbId(financeStaffData[0].id)
+          saveSessionData('finance_staff', financeStaffData[0].school_id, email)
+          setLoading(false)
+          return
+        }
+
+        // No role found
+        console.log('No role found for user:', email)
+        setUserRole(null)
         setSchoolId(null)
-        setUserDbId(superAdminData[0].id)
-        saveSessionData('super_admin', '', email)
+        setUserDbId(null)
         setLoading(false)
-        return
-      }
-
-      // Check if user is finance staff
-      // Checking finance_staff table
-      const { data: financeStaffData, error: financeStaffError } = await supabase
-        .from('finance_staff')
-        .select('id, school_id')
-        .eq('email', email)
-        .limit(1)
+      })()
       
-      if (financeStaffError) {
-        console.error('Error checking finance staff:', financeStaffError)
-        throw financeStaffError
-      }
-
-      if (financeStaffData && financeStaffData.length > 0) {
-        // Found finance staff
-        console.log('Found finance staff:', financeStaffData[0])
-        setUserRole('finance_staff')
-        setSchoolId(financeStaffData[0].school_id)
-        setUserDbId(financeStaffData[0].id)
-        saveSessionData('finance_staff', financeStaffData[0].school_id, email)
-        setLoading(false)
-        return
-      }
-
-      // No role found
-      console.log('No role found for user:', email)
-      setUserRole(null)
-      setSchoolId(null)
-      setUserDbId(null)
-      setLoading(false)
+      await Promise.race([rolePromise, timeoutPromise])
       
     } catch (error) {
       console.error('Error determining user role:', error)
@@ -300,7 +299,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const timeout = setTimeout(() => {
       console.log('Auth timeout - forcing loading to false')
       setLoading(false)
-    }, 30000) // 30 second timeout
+    }, 15000) // 15 second timeout
 
     return () => {
       subscription.unsubscribe()
