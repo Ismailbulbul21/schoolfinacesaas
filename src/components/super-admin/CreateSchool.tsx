@@ -85,9 +85,7 @@ const CreateSchool: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['schools'] })
       setSuccess(`School "${school.name}" and admin account created successfully!`)
       reset()
-      setTimeout(() => {
-        navigate('/super-admin/schools')
-      }, 2000)
+      // Don't navigate away - let super admin stay in dashboard
     },
     onError: (error: any) => {
       setError(error.message || 'Failed to create school')

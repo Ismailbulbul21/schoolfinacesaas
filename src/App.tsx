@@ -55,7 +55,7 @@ function AppRoutes() {
   }
 
   // If user exists but no role yet, show a minimal loading state
-  if (user && !userRole) {
+  if (user && !userRole && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -64,6 +64,11 @@ function AppRoutes() {
         </div>
       </div>
     )
+  }
+
+  // If user exists but no role and not loading, redirect to login
+  if (user && !userRole && !loading) {
+    return <Navigate to="/login" replace />
   }
 
   // User is authenticated and has a role

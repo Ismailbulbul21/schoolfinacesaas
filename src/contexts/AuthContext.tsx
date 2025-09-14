@@ -88,20 +88,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const determineUserRole = useCallback(async (email: string) => {
       // Determining user role
+      console.log('Determining user role for:', email)
     
     try {
       // Check if user is a school admin
       // Checking school_admins table
-      const { data: schoolAdminData } = await supabase
+      const { data: schoolAdminData, error: schoolAdminError } = await supabase
         .from('school_admins')
         .select('id, school_id')
         .eq('email', email)
         .limit(1)
       
-      // School admin query completed
+      if (schoolAdminError) {
+        console.error('Error checking school admin:', schoolAdminError)
+        throw schoolAdminError
+      }
 
       if (schoolAdminData && schoolAdminData.length > 0) {
         // Found school admin
+        console.log('Found school admin:', schoolAdminData[0])
         setUserRole('school_admin')
         setSchoolId(schoolAdminData[0].school_id)
         setUserDbId(schoolAdminData[0].id)
@@ -112,16 +117,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Check if user is a super admin
       // Checking super_admins table
-      const { data: superAdminData } = await supabase
+      const { data: superAdminData, error: superAdminError } = await supabase
         .from('super_admins')
         .select('id')
         .eq('email', email)
         .limit(1)
       
-      // Super admin query completed
+      if (superAdminError) {
+        console.error('Error checking super admin:', superAdminError)
+        throw superAdminError
+      }
 
       if (superAdminData && superAdminData.length > 0) {
         // Found super admin
+        console.log('Found super admin:', superAdminData[0])
         setUserRole('super_admin')
         setSchoolId(null)
         setUserDbId(superAdminData[0].id)
@@ -132,16 +141,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Check if user is finance staff
       // Checking finance_staff table
-      const { data: financeStaffData } = await supabase
+      const { data: financeStaffData, error: financeStaffError } = await supabase
         .from('finance_staff')
         .select('id, school_id')
         .eq('email', email)
         .limit(1)
       
-      // Finance staff query completed
+      if (financeStaffError) {
+        console.error('Error checking finance staff:', financeStaffError)
+        throw financeStaffError
+      }
 
       if (financeStaffData && financeStaffData.length > 0) {
         // Found finance staff
+        console.log('Found finance staff:', financeStaffData[0])
         setUserRole('finance_staff')
         setSchoolId(financeStaffData[0].school_id)
         setUserDbId(financeStaffData[0].id)
@@ -151,7 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // No role found
-      // No role found for user
+      console.log('No role found for user:', email)
       setUserRole(null)
       setSchoolId(null)
       setUserDbId(null)
@@ -270,7 +283,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const timeout = setTimeout(() => {
       console.log('Auth timeout - forcing loading to false')
       setLoading(false)
-    }, 10000) // 10 second timeout
+    }, 30000) // 30 second timeout
 
     return () => {
       subscription.unsubscribe()
