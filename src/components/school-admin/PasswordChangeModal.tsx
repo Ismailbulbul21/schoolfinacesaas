@@ -53,7 +53,7 @@ const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ isOpen, onClo
     setSuccess(false)
 
     try {
-      const { error } = await changePassword(data.currentPassword, data.newPassword)
+      const { error } = await changePassword(data.newPassword)
       
       if (error) {
         setError(error.message || 'Failed to change password')

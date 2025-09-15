@@ -1,15 +1,12 @@
 import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { 
   Settings, 
   Shield, 
   Database, 
-  Users, 
   Bell, 
-  Key,
-  Save,
   AlertCircle,
   CheckCircle,
   RefreshCw
@@ -17,7 +14,6 @@ import {
 
 const SystemSettings: React.FC = () => {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'general' | 'security' | 'database' | 'notifications'>('general')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -25,9 +21,9 @@ const SystemSettings: React.FC = () => {
   const { data: systemStats, isLoading: statsLoading } = useQuery({
     queryKey: ['system-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_system_stats')
+      const { data: statsData, error } = await supabase.rpc('get_system_stats')
       if (error) throw error
-      return data[0]
+      return statsData[0]
     },
     retry: false,
     refetchOnWindowFocus: false,
@@ -38,7 +34,7 @@ const SystemSettings: React.FC = () => {
   const { data: dbHealth, refetch: checkDbHealth } = useQuery({
     queryKey: ['db-health'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('schools')
         .select('count')
         .limit(1)
