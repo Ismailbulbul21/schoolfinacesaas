@@ -32,6 +32,15 @@ interface AuthProviderProps {
 }
 
 
+// Helper function to detect network errors
+const isNetworkError = (error: any) => {
+  return error?.message?.includes('Failed to load resource') ||
+         error?.message?.includes('404') ||
+         error?.message?.includes('Network Error') ||
+         error?.message?.includes('ERR_INTERNET_DISCONNECTED') ||
+         error?.message?.includes('Invalid Refresh Token')
+}
+
 // Helper function to retry queries with exponential backoff
 const retryQuery = async <T,>(
   queryFn: () => Promise<T>, 
@@ -45,7 +54,8 @@ const retryQuery = async <T,>(
       const isLastAttempt = attempt === maxRetries - 1
       const isRetryableError = error?.message?.includes('406') || 
                               error?.message?.includes('timeout') ||
-                              error?.message?.includes('Network Error')
+                              error?.message?.includes('Network Error') ||
+                              isNetworkError(error)
       
       if (isLastAttempt || !isRetryableError) {
         throw error
@@ -150,6 +160,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Ref to prevent multiple simultaneous role fetches
   const fetchingRoleRef = useRef(false)
 
+  // Check if running in production
+  const isProduction = typeof window !== 'undefined' && 
+    window.location.hostname !== 'localhost' && 
+    window.location.hostname !== '127.0.0.1'
+
   // Optimized function to fetch user role and school
   const fetchUserRole = async (user: User) => {
     if (fetchingRoleRef.current) {
@@ -193,6 +208,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let mounted = true
 
+    // Clear session if domain changed
+    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : ''
+    const storedDomain = typeof window !== 'undefined' ? localStorage.getItem('auth_domain') : null
+    
+    if (storedDomain && storedDomain !== currentDomain) {
+      console.log('🌐 Domain changed, clearing session')
+      supabase.auth.signOut()
+    }
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_domain', currentDomain)
+    }
+
     const initializeAuth = async () => {
       try {
         console.log('🔐 Initializing authentication...')
@@ -200,6 +228,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (error) {
           console.error('❌ Error getting session:', error)
+          // Clear invalid session
+          if (isNetworkError(error)) {
+            console.log('🧹 Clearing invalid session due to network error')
+            await supabase.auth.signOut()
+          }
           if (mounted) setLoading(false)
           return
         }
@@ -215,6 +248,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.error('❌ Error initializing auth:', error)
+        // Clear invalid session on error
+        if (isNetworkError(error)) {
+          console.log('🧹 Clearing invalid session due to error')
+          await supabase.auth.signOut()
+        }
         if (mounted) setLoading(false)
       }
     }
@@ -265,6 +303,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return () => clearTimeout(timeout)
   }, [loading, user])
+
+  // Handle page unload and clear sensitive data
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Clear sensitive data when leaving the page
+      if (isProduction) {
+        console.log('🧹 Clearing sensitive data on page unload')
+        localStorage.removeItem('supabase.auth.token')
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && isProduction) {
+        console.log('👁️ Page hidden, clearing sensitive data')
+        localStorage.removeItem('supabase.auth.token')
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [isProduction])
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -378,6 +442,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) {
         console.error('❌ Session refresh error:', error)
+        // Clear invalid session
+        if (isNetworkError(error) || error.message?.includes('Invalid Refresh Token')) {
+          console.log('🧹 Clearing invalid session due to refresh token error')
+          await supabase.auth.signOut()
+          setUser(null)
+          setUserRole(null)
+          setSchoolId(null)
+          setSession(null)
+        }
         return
       }
 
@@ -391,6 +464,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('❌ Session refresh exception:', error)
+      // Clear invalid session on exception
+      if (isNetworkError(error)) {
+        console.log('🧹 Clearing invalid session due to refresh exception')
+        await supabase.auth.signOut()
+        setUser(null)
+        setUserRole(null)
+        setSchoolId(null)
+        setSession(null)
+      }
     }
   }
 
