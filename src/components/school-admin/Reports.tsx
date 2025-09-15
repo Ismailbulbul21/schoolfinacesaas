@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { InvoicePrint } from '../PrintUtils'
 import { 
   Download, 
   FileText, 
@@ -342,6 +343,12 @@ const Reports: React.FC = () => {
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </button>
+          {filteredInvoices && filteredInvoices.length > 0 && (
+            <InvoicePrint 
+              invoices={filteredInvoices} 
+              className="inline-flex"
+            />
+          )}
         </div>
       </div>
 

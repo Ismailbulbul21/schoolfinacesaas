@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import FlexibleBulkImport from './FlexibleBulkImport'
+import { StudentPrint } from '../PrintUtils'
 import { 
   Plus, 
   Edit, 
@@ -299,6 +300,12 @@ const StudentsList: React.FC = () => {
               <Upload className="h-4 w-4 mr-1" />
               Import Students
             </button>
+            {students && students.length > 0 && (
+              <StudentPrint 
+                students={students} 
+                className="inline-flex"
+              />
+            )}
             <button
               onClick={() => setShowAddForm(true)}
               className="inline-flex items-center px-3 py-2 bg-blue-600 text-xs font-medium text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"

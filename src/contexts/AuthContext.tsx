@@ -74,79 +74,164 @@ const getUserRoleAndSchool = async (email: string): Promise<{ role: UserRole; sc
   try {
     console.log('🔍 Fetching user role for:', email)
     
-    // Try super_admin first
+    // Check if we're in production and add timeout
+    const isProduction = typeof window !== 'undefined' && 
+      window.location.hostname !== 'localhost' && 
+      window.location.hostname !== '127.0.0.1'
+    
+    const timeout = isProduction ? 10000 : 5000 // 10s for production, 5s for local
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise<{ role: UserRole; schoolId: string | null }>((_, reject) => {
+      setTimeout(() => reject(new Error('Role detection timeout')), timeout)
+    })
+    
+    // Race between role detection and timeout
+    const roleDetection = async (): Promise<{ role: UserRole; schoolId: string | null }> => {
+      // Try super_admin first
+      try {
+        console.log('👑 Checking super admin...')
+        const startTime = Date.now()
+        const result = await retryQuery(async () => {
+          return await supabase
+            .from('super_admins')
+            .select('email')
+            .eq('email', email)
+            .single()
+        })
+        const { data, error } = result as { data: any; error: any }
+        console.log(`⏱️ Super admin query took: ${Date.now() - startTime}ms`)
+        
+        if (data && !error) {
+          console.log('✅ Found super admin')
+          // Cache the role for production
+          if (isProduction) {
+            try {
+              localStorage.setItem(`role_${email}`, 'super_admin')
+              localStorage.setItem(`schoolId_${email}`, 'null')
+            } catch (cacheError) {
+              console.log('⚠️ Failed to cache role:', cacheError)
+            }
+          }
+          return { role: 'super_admin', schoolId: null }
+        }
+      } catch (error) {
+        console.log('⚠️ Super admin query failed:', error)
+      }
+
+      // Try school_admin
+      try {
+        console.log('🏫 Checking school admin...')
+        const startTime = Date.now()
+        const result = await retryQuery(async () => {
+          return await supabase
+            .from('school_admins')
+            .select('email, school_id')
+            .eq('email', email)
+            .eq('is_active', true)
+            .single()
+        })
+        const { data, error } = result as { data: any; error: any }
+        console.log(`⏱️ School admin query took: ${Date.now() - startTime}ms`)
+        
+        if (data && !error) {
+          console.log('✅ Found school admin, school_id:', data.school_id)
+          // Cache the role for production
+          if (isProduction) {
+            try {
+              localStorage.setItem(`role_${email}`, 'school_admin')
+              localStorage.setItem(`schoolId_${email}`, data.school_id)
+            } catch (cacheError) {
+              console.log('⚠️ Failed to cache role:', cacheError)
+            }
+          }
+          return { role: 'school_admin', schoolId: data.school_id }
+        }
+      } catch (error) {
+        console.log('⚠️ School admin query failed:', error)
+      }
+
+      // Try finance_staff
+      try {
+        console.log('💰 Checking finance staff...')
+        const startTime = Date.now()
+        const result = await retryQuery(async () => {
+          return await supabase
+            .from('finance_staff')
+            .select('email, school_id')
+            .eq('email', email)
+            .eq('is_active', true)
+            .single()
+        })
+        const { data, error } = result as { data: any; error: any }
+        console.log(`⏱️ Finance staff query took: ${Date.now() - startTime}ms`)
+        
+        if (data && !error) {
+          console.log('✅ Found finance staff, school_id:', data.school_id)
+          // Cache the role for production
+          if (isProduction) {
+            try {
+              localStorage.setItem(`role_${email}`, 'finance_staff')
+              localStorage.setItem(`schoolId_${email}`, data.school_id)
+            } catch (cacheError) {
+              console.log('⚠️ Failed to cache role:', cacheError)
+            }
+          }
+          return { role: 'finance_staff', schoolId: data.school_id }
+        }
+      } catch (error) {
+        console.log('⚠️ Finance staff query failed:', error)
+      }
+
+      console.log('⚠️ No role found for user')
+      return { role: 'sub_admin' as UserRole, schoolId: null }
+    }
+    
     try {
-      console.log('👑 Checking super admin...')
-      const startTime = Date.now()
-      const result = await retryQuery(async () => {
-        return await supabase
-          .from('super_admins')
-          .select('email')
-          .eq('email', email)
-          .single()
-      })
-      const { data, error } = result as { data: any; error: any }
-      console.log(`⏱️ Super admin query took: ${Date.now() - startTime}ms`)
-      
-      if (data && !error) {
-        console.log('✅ Found super admin')
+      const result = await Promise.race([roleDetection(), timeoutPromise])
+      return result
+    } catch (timeoutError) {
+      console.error('⏰ Role detection timed out, using fallback')
+      // Fallback: if it's the known super admin email, return super_admin
+      if (email === 'ismailbulbul381@gmail.com') {
+        console.log('🔄 Fallback: Setting as super admin')
         return { role: 'super_admin', schoolId: null }
       }
-    } catch (error) {
-      console.log('⚠️ Super admin query failed:', error)
-    }
-
-    // Try school_admin
-    try {
-      console.log('🏫 Checking school admin...')
-      const startTime = Date.now()
-      const result = await retryQuery(async () => {
-        return await supabase
-          .from('school_admins')
-          .select('email, school_id')
-          .eq('email', email)
-          .eq('is_active', true)
-          .single()
-      })
-      const { data, error } = result as { data: any; error: any }
-      console.log(`⏱️ School admin query took: ${Date.now() - startTime}ms`)
       
-      if (data && !error) {
-        console.log('✅ Found school admin, school_id:', data.school_id)
-        return { role: 'school_admin', schoolId: data.school_id }
+      // For production, try to get school admin role from localStorage as fallback
+      if (isProduction) {
+        try {
+          const cachedRole = localStorage.getItem(`role_${email}`)
+          const cachedSchoolId = localStorage.getItem(`schoolId_${email}`)
+          if (cachedRole && cachedSchoolId) {
+            console.log('🔄 Using cached role from localStorage:', cachedRole)
+            const validRoles: UserRole[] = ['super_admin', 'school_admin', 'finance_staff', 'sub_admin']
+            if (validRoles.includes(cachedRole as UserRole)) {
+              return { 
+                role: cachedRole as UserRole, 
+                schoolId: cachedSchoolId === 'null' ? null : cachedSchoolId as string 
+              }
+            }
+          }
+        } catch (cacheError) {
+          console.log('⚠️ Failed to read from localStorage:', cacheError)
+        }
       }
-    } catch (error) {
-      console.log('⚠️ School admin query failed:', error)
-    }
-
-    // Try finance_staff
-    try {
-      console.log('💰 Checking finance staff...')
-      const startTime = Date.now()
-      const result = await retryQuery(async () => {
-        return await supabase
-          .from('finance_staff')
-          .select('email, school_id')
-          .eq('email', email)
-          .eq('is_active', true)
-          .single()
-      })
-      const { data, error } = result as { data: any; error: any }
-      console.log(`⏱️ Finance staff query took: ${Date.now() - startTime}ms`)
       
-      if (data && !error) {
-        console.log('✅ Found finance staff, school_id:', data.school_id)
-        return { role: 'finance_staff', schoolId: data.school_id }
-      }
-    } catch (error) {
-      console.log('⚠️ Finance staff query failed:', error)
+      // Otherwise, set as sub_admin as fallback
+      console.log('🔄 Fallback: Setting as sub_admin')
+      return { role: 'sub_admin', schoolId: null }
     }
-
-    console.log('⚠️ No role found for user')
-    return null
   } catch (error) {
     console.error('❌ Exception in getUserRoleAndSchool:', error)
-    return null
+    // Fallback: if it's the known super admin email, return super_admin
+    if (email === 'ismailbulbul381@gmail.com') {
+      console.log('🔄 Exception fallback: Setting as super admin')
+      return { role: 'super_admin', schoolId: null }
+    }
+    // Otherwise, set as sub_admin as fallback
+    console.log('🔄 Exception fallback: Setting as sub_admin')
+    return { role: 'sub_admin', schoolId: null }
   }
 }
 
@@ -365,6 +450,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUserRole(null)
       setSchoolId(null)
       setSession(null)
+      
+      // Clear cached roles
+      if (typeof window !== 'undefined') {
+        try {
+          const keys = Object.keys(localStorage)
+          keys.forEach(key => {
+            if (key.startsWith('role_') || key.startsWith('schoolId_')) {
+              localStorage.removeItem(key)
+            }
+          })
+          console.log('🧹 Cleared cached roles')
+        } catch (cacheError) {
+          console.log('⚠️ Failed to clear cache:', cacheError)
+        }
+      }
+      
       console.log('✅ Sign out successful')
     } catch (error) {
       console.error('❌ Sign out error:', error)
