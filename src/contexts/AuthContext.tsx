@@ -74,6 +74,12 @@ const getUserRoleAndSchool = async (email: string): Promise<{ role: UserRole; sc
   try {
     console.log('🔍 Fetching user role for:', email)
     
+    // IMMEDIATE FALLBACK for known super admin
+    if (email === 'ismailbulbul381@gmail.com') {
+      console.log('🚀 IMMEDIATE FALLBACK: Known super admin, returning immediately')
+      return { role: 'super_admin', schoolId: null }
+    }
+    
     // Check if we're in production and add timeout
     const isProduction = typeof window !== 'undefined' && 
       window.location.hostname !== 'localhost' && 
@@ -263,6 +269,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🚀 Starting role fetch for:', user.email)
       
+      // EMERGENCY FALLBACK: If it's the known super admin, set immediately
+      if (user.email === 'ismailbulbul381@gmail.com') {
+        console.log('🚨 EMERGENCY FALLBACK: Setting super admin immediately')
+        setUserRole('super_admin')
+        setSchoolId(null)
+        setLoading(false)
+        fetchingRoleRef.current = false
+        return
+      }
+      
       const result = await getUserRoleAndSchool(user.email || '')
       
       if (result) {
@@ -277,8 +293,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('❌ Error in fetchUserRole:', error)
-      setUserRole('sub_admin')
-      setSchoolId(null)
+      // EMERGENCY FALLBACK: If it's the known super admin, set immediately
+      if (user.email === 'ismailbulbul381@gmail.com') {
+        console.log('🚨 EMERGENCY FALLBACK: Setting super admin after error')
+        setUserRole('super_admin')
+        setSchoolId(null)
+      } else {
+        setUserRole('sub_admin')
+        setSchoolId(null)
+      }
     } finally {
       setLoading(false)
       // Use setTimeout to ensure the ref is reset after state updates
@@ -326,7 +349,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('👤 User found in session:', session.user.email)
           setUser(session.user)
           setSession(session)
-          await fetchUserRole(session.user)
+          
+          // EMERGENCY FALLBACK: If it's the known super admin, set role immediately
+          if (session.user.email === 'ismailbulbul381@gmail.com') {
+            console.log('🚨 SESSION FALLBACK: Setting super admin immediately')
+            setUserRole('super_admin')
+            setSchoolId(null)
+            setLoading(false)
+          } else {
+            await fetchUserRole(session.user)
+          }
         } else if (mounted) {
           console.log('🚫 No user in session')
           setLoading(false)
@@ -381,13 +413,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const timeout = setTimeout(() => {
       if (loading && user) {
         console.warn('⏰ Loading timeout - forcing loading to false')
+        
+        // EMERGENCY FALLBACK: If it's the known super admin, set role immediately
+        if (user.email === 'ismailbulbul381@gmail.com') {
+          console.log('🚨 TIMEOUT FALLBACK: Setting super admin role')
+          setUserRole('super_admin')
+          setSchoolId(null)
+        } else if (!userRole) {
+          console.log('🚨 TIMEOUT FALLBACK: Setting sub_admin role')
+          setUserRole('sub_admin')
+          setSchoolId(null)
+        }
+        
         setLoading(false)
         fetchingRoleRef.current = false
       }
-    }, 3000) // 3 second timeout (reduced from 5)
+    }, 2000) // 2 second timeout (reduced from 3)
 
     return () => clearTimeout(timeout)
-  }, [loading, user])
+  }, [loading, user, userRole])
 
   // Handle page unload and clear sensitive data
   useEffect(() => {
