@@ -57,15 +57,15 @@ const FullLogo: React.FC<FullLogoProps> = ({
         {/* School System Text */}
         {showText && (
           <>
-            <text x="110" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">
+            <text x="110" y="35" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="bold" fill="#ffffff">
               School
             </text>
-            <text x="110" y="55" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#fbbf24">
+            <text x="110" y="55" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="bold" fill="#fbbf24">
               System
             </text>
             
             {/* Subtitle */}
-            <text x="110" y="68" font-family="Arial, sans-serif" font-size="12" font-weight="normal" fill="#dbeafe" opacity="0.9">
+            <text x="110" y="68" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="normal" fill="#dbeafe" opacity="0.9">
               Finance Management
             </text>
           </>
