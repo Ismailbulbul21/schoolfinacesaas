@@ -31,18 +31,9 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-// Helper function to add timeout to queries
-const queryWithTimeout = async <T>(query: Promise<T>, timeoutMs: number = 2000): Promise<T> => {
-  return Promise.race([
-    query,
-    new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error(`Query timeout after ${timeoutMs}ms`)), timeoutMs)
-    )
-  ])
-}
 
 // Helper function to retry queries with exponential backoff
-const retryQuery = async <T>(
+const retryQuery = async <T,>(
   queryFn: () => Promise<T>, 
   maxRetries: number = 3,
   baseDelay: number = 1000
@@ -77,16 +68,14 @@ const getUserRoleAndSchool = async (email: string): Promise<{ role: UserRole; sc
     try {
       console.log('👑 Checking super admin...')
       const startTime = Date.now()
-      const { data, error } = await retryQuery(() => 
-        queryWithTimeout(
-          supabase
-            .from('super_admins')
-            .select('email')
-            .eq('email', email)
-            .single(),
-          2000
-        )
-      )
+      const result = await retryQuery(async () => {
+        return await supabase
+          .from('super_admins')
+          .select('email')
+          .eq('email', email)
+          .single()
+      })
+      const { data, error } = result as { data: any; error: any }
       console.log(`⏱️ Super admin query took: ${Date.now() - startTime}ms`)
       
       if (data && !error) {
@@ -101,17 +90,15 @@ const getUserRoleAndSchool = async (email: string): Promise<{ role: UserRole; sc
     try {
       console.log('🏫 Checking school admin...')
       const startTime = Date.now()
-      const { data, error } = await retryQuery(() => 
-        queryWithTimeout(
-          supabase
-            .from('school_admins')
-            .select('email, school_id')
-            .eq('email', email)
-            .eq('is_active', true)
-            .single(),
-          2000
-        )
-      )
+      const result = await retryQuery(async () => {
+        return await supabase
+          .from('school_admins')
+          .select('email, school_id')
+          .eq('email', email)
+          .eq('is_active', true)
+          .single()
+      })
+      const { data, error } = result as { data: any; error: any }
       console.log(`⏱️ School admin query took: ${Date.now() - startTime}ms`)
       
       if (data && !error) {
@@ -126,17 +113,15 @@ const getUserRoleAndSchool = async (email: string): Promise<{ role: UserRole; sc
     try {
       console.log('💰 Checking finance staff...')
       const startTime = Date.now()
-      const { data, error } = await retryQuery(() => 
-        queryWithTimeout(
-          supabase
-            .from('finance_staff')
-            .select('email, school_id')
-            .eq('email', email)
-            .eq('is_active', true)
-            .single(),
-          2000
-        )
-      )
+      const result = await retryQuery(async () => {
+        return await supabase
+          .from('finance_staff')
+          .select('email, school_id')
+          .eq('email', email)
+          .eq('is_active', true)
+          .single()
+      })
+      const { data, error } = result as { data: any; error: any }
       console.log(`⏱️ Finance staff query took: ${Date.now() - startTime}ms`)
       
       if (data && !error) {
